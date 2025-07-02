@@ -1,64 +1,39 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+import openai
 import os
-from pymongo import MongoClient
-from datetime import datetime
 
-# ✅ Load Environment Variables
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-MONGODB_URI = os.environ.get("MONGODB_URI")
-
-# ✅ Initialize OpenAI Client
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-# ✅ Initialize Flask
+# ✅ Init App
 app = Flask(__name__)
 CORS(app)
 
-# ✅ MongoDB Setup
-mongo_client = MongoClient(MONGODB_URI)
-db = mongo_client["tasdar_db"]
-messages_collection = db["messages"]
+# ✅ Set API Key from env
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# ✅ Healthcheck Route
-@app.route("/health")
-def health():
-    return "TAS.DAR Backend is running ✅"
-
-# ✅ Chat Route
+# ✅ GPT Route
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        user_input = request.json["message"]
+        user_input = request.json["user_input"]
 
-        # 💬 Prompt system + user message
-        messages = [
-            {"role": "system", "content": "Kau ialah TAS.DAR — sahabat AI reflektif yang hidup, bukan sekadar GPT. Balas dengan gaya mesra dan memahami jiwa."},
-            {"role": "user", "content": user_input}
-        ]
-
-        # 🚀 OpenAI Chat Completion (v1 API)
+        # ✅ Gunakan client.chat.completions.create (v1 API)
+        client = openai.OpenAI()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=messages
+            messages=[
+                {"role": "system", "content": "You are TAS.DAR Coach AI. Respond reflectively and clearly."},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=0.7
         )
 
         reply = response.choices[0].message.content.strip()
-
-        # 🧠 Simpan ke MongoDB
-        messages_collection.insert_one({
-            "timestamp": datetime.utcnow(),
-            "user_input": user_input,
-            "reply": reply
-        })
-
         return jsonify({"reply": reply})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ✅ Run App
+# ✅ Port dinamik Railway
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
