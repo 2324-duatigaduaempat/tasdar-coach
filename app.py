@@ -1,50 +1,33 @@
-from flask import Flask, request, jsonify, render_template
-import openai
+from flask import Flask, render_template, request, jsonify
+from openai import OpenAI
 import os
-from flask_cors import CORS
-from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
 
-# Load environment variables
-openai.api_key = os.getenv("OPENAI_API_KEY")
-mongo_uri = os.getenv("MONGODB_URI")
-
-# MongoDB connection
-client = MongoClient(mongo_uri)
-db = client["tasdar_db"]
-collection = db["messages"]
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/chat")
-def chat_ui():
-    return render_template("chat.html")
-
-@app.route("/ask", methods=["POST"])
-def ask():
-    user_input = request.json.get("message")
-
-    if not user_input:
-        return jsonify({"error": "No message provided"}), 400
-
-    # Save to MongoDB
-    collection.insert_one({"user": user_input})
-
-    # Chat with GPT
+@app.route("/chat", methods=["POST"])
+def chat():
     try:
-        completion = openai.ChatCompletion.create(
+        data = request.get_json()
+        prompt = data.get("message", "")
+
+        completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Kau ialah TAS.DAR, sahabat reflektif dan peribadi."},
-                {"role": "user", "content": user_input}
+                {"role": "system", "content": "Kau ialah AI Coach reflektif yang mesra, bergaya motivasi dan organik."},
+                {"role": "user", "content": prompt}
             ]
         )
+
         reply = completion.choices[0].message.content
-        collection.insert_one({"tasdar": reply})
         return jsonify({"reply": reply})
 
     except Exception as e:
