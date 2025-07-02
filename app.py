@@ -10,6 +10,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 def home():
     return render_template("index.html")  # Pastikan templates/index.html wujud
 
+@app.route("/chat")
+def chat_ui():
+    return render_template("chat.html")
+
 @app.route("/ask", methods=["POST"])
 def ask():
     data = request.get_json(force=True)  # force = fallback kalau Content-Type tiada
