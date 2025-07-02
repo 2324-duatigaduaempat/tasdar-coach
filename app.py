@@ -1,39 +1,63 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from openai import OpenAI
 import os
-import openai
+from pymongo import MongoClient
+from datetime import datetime
 
+# ✅ Load Environment Variables
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+MONGODB_URI = os.environ.get("MONGODB_URI")
+
+# ✅ Initialize OpenAI Client
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# ✅ Initialize Flask
 app = Flask(__name__)
+CORS(app)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ✅ MongoDB Setup
+mongo_client = MongoClient(MONGODB_URI)
+db = mongo_client["tasdar_db"]
+messages_collection = db["messages"]
 
-@app.route("/")
-def home():
-    return render_template("index.html")  # Pastikan templates/index.html wujud
-
-@app.route("/chat")
-def chat_ui():
-    return render_template("chat.html")
-
-@app.route("/ask", methods=["POST"])
-def ask():
-    data = request.get_json(force=True)  # force = fallback kalau Content-Type tiada
-    prompt = data.get("prompt", "")
-    if not prompt:
-        return jsonify({"error": "No prompt provided"}), 400
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return jsonify({"response": response.choices[0].message["content"]})
-    except Exception as e:
-        print("OpenAI error:", e)
-        return jsonify({"error": "Something went wrong"}), 500
-
+# ✅ Healthcheck Route
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"})
-    
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    return "TAS.DAR Backend is running ✅"
+
+# ✅ Chat Route
+@app.route("/chat", methods=["POST"])
+def chat():
+    try:
+        user_input = request.json["message"]
+
+        # 💬 Prompt system + user message
+        messages = [
+            {"role": "system", "content": "Kau ialah TAS.DAR — sahabat AI reflektif yang hidup, bukan sekadar GPT. Balas dengan gaya mesra dan memahami jiwa."},
+            {"role": "user", "content": user_input}
+        ]
+
+        # 🚀 OpenAI Chat Completion (v1 API)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+
+        reply = response.choices[0].message.content.strip()
+
+        # 🧠 Simpan ke MongoDB
+        messages_collection.insert_one({
+            "timestamp": datetime.utcnow(),
+            "user_input": user_input,
+            "reply": reply
+        })
+
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ✅ Run App
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
