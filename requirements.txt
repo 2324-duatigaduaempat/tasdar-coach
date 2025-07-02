@@ -1,5 +1,6 @@
 flask
+flask-cors
 gunicorn
-openai
+openai>=1.3.0
 pymongo
 python-dotenv
