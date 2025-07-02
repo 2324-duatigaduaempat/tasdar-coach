@@ -8,11 +8,11 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html")  # Pastikan templates/index.html wujud
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    data = request.json
+    data = request.get_json(force=True)  # force = fallback kalau Content-Type tiada
     prompt = data.get("prompt", "")
     if not prompt:
         return jsonify({"error": "No prompt provided"}), 400
@@ -24,7 +24,8 @@ def ask():
         )
         return jsonify({"response": response.choices[0].message["content"]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print("OpenAI error:", e)
+        return jsonify({"error": "Something went wrong"}), 500
 
 @app.route("/health")
 def health():
