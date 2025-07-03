@@ -1,16 +1,17 @@
-<!DOCTYPE html>
-<html lang="ms">
-<head>
-    <meta charset="UTF-8">
-    <title>TAS.DAR Coach AI</title>
-    <script src="/static/chat.js" defer></script>
-</head>
-<body>
-    <h2>TAS.DAR Coach AI</h2>
-    <form>
-        <input type="text" placeholder="Tulis mesej di sini..." required />
-        <button type="submit">Hantar</button>
-    </form>
-    <div id="output" style="margin-top:20px;"></div>
-</body>
-</html>
+
+<h1>TAS.DAR Coach AI</h1>
+<p>Sila taip mesej pertama anda...</p>
+<textarea id="msg" rows="5" cols="50" placeholder="Tulis mesej di sini..."></textarea><br>
+<button onclick="send()">Hantar</button>
+<div id="response"></div>
+<script>
+function send() {
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: document.getElementById("msg").value})
+  })
+  .then(res => res.json())
+  .then(data => { document.getElementById("response").innerText = data.reply; });
+}
+</script>
