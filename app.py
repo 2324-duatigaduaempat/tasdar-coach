@@ -3,8 +3,6 @@ import openai
 import os
 
 app = Flask(__name__)
-
-# Dapatkan API key dari env
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 @app.route("/")
@@ -27,7 +25,6 @@ def chat():
                 {"role": "user", "content": mesej}
             ]
         )
-
         jawapan = response["choices"][0]["message"]["content"]
         return jsonify({"balasan": jawapan})
 
@@ -35,5 +32,5 @@ def chat():
         return jsonify({"balasan": "Maaf, ada ralat: " + str(e)}), 500
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Ambil port dari environment (Render guna ini)
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
