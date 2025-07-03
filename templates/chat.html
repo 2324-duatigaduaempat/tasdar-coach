@@ -1,17 +1,39 @@
 
-<h1>TAS.DAR Coach AI</h1>
-<p>Sila taip mesej pertama anda...</p>
-<textarea id="msg" rows="5" cols="50" placeholder="Tulis mesej di sini..."></textarea><br>
-<button onclick="send()">Hantar</button>
-<div id="response"></div>
-<script>
-function send() {
-  fetch('/api/chat', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({message: document.getElementById("msg").value})
-  })
-  .then(res => res.json())
-  .then(data => { document.getElementById("response").innerText = data.reply; });
-}
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TAS.DAR Chat</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
+        input[type=text] { width: 80%; }
+        button { width: 18%; }
+    </style>
+</head>
+<body>
+    <h1>TAS.DAR Coach AI</h1>
+    <div id="messages"></div>
+    <input type="text" id="userInput" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById("userInput");
+            const msgBox = document.getElementById("messages");
+            const userMsg = input.value;
+            msgBox.innerHTML += "<div><b>You:</b> " + userMsg + "</div>";
+            const res = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMsg })
+            });
+            const data = await res.json();
+            if (data.reply)
+                msgBox.innerHTML += "<div><b>TAS.DAR:</b> " + data.reply + "</div>";
+            else
+                msgBox.innerHTML += "<div style='color:red;'><b>Error:</b> " + data.error + "</div>";
+            input.value = "";
+        }
+    </script>
+</body>
+</html>
