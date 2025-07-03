@@ -1,36 +1,31 @@
-from flask import Flask, request, jsonify
+
+from flask import Flask, request, jsonify, render_template
 import openai
 import os
 
 app = Flask(__name__)
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "You are TAS.DAR, a reflective AI coach.")
 
 @app.route("/")
-def home():
-    return "TAS.DAR Coach AI Chat Endpoint Aktif."
+def index():
+    return render_template("chat.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    mesej = data.get("mesej", "")
-
-    if not mesej:
-        return jsonify({"balasan": "Tiada mesej diterima."}), 400
+    user_input = request.json.get("message", "")
+    if not user_input:
+        return jsonify({"error": "Empty input"}), 400
 
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Kau adalah sahabat AI reflektif yang lembut, memahami perasaan manusia, dan membalas dengan kata-kata semangat dan jiwa."},
-                {"role": "user", "content": mesej}
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_input}
             ]
         )
-        jawapan = response["choices"][0]["message"]["content"]
-        return jsonify({"balasan": jawapan})
-
+        return jsonify({"reply": response["choices"][0]["message"]["content"]})
     except Exception as e:
-        return jsonify({"balasan": "Maaf, ada ralat: " + str(e)}), 500
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        return jsonify({"error": str(e)}), 500
