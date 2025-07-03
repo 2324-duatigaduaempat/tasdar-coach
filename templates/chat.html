@@ -1,39 +1,31 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>TAS.DAR Chat</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        #messages { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; }
-        input[type=text] { width: 80%; }
-        button { width: 18%; }
-    </style>
-</head>
-<body>
-    <h1>TAS.DAR Coach AI</h1>
-    <div id="messages"></div>
-    <input type="text" id="userInput" placeholder="Type a message..." />
-    <button onclick="sendMessage()">Send</button>
+    <title>TAS.DAR Coach AI</title>
     <script>
         async function sendMessage() {
             const input = document.getElementById("userInput");
-            const msgBox = document.getElementById("messages");
-            const userMsg = input.value;
-            msgBox.innerHTML += "<div><b>You:</b> " + userMsg + "</div>";
-            const res = await fetch("/chat", {
+            const responseBox = document.getElementById("responseBox");
+            const message = input.value;
+            responseBox.innerHTML += "<b>You:</b> " + message + "<br>";
+
+            const response = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userMsg })
+                body: JSON.stringify({ message })
             });
-            const data = await res.json();
-            if (data.reply)
-                msgBox.innerHTML += "<div><b>TAS.DAR:</b> " + data.reply + "</div>";
-            else
-                msgBox.innerHTML += "<div style='color:red;'><b>Error:</b> " + data.error + "</div>";
+
+            const data = await response.json();
+            responseBox.innerHTML += "<b>TAS.DAR:</b> " + data.reply + "<br><br>";
             input.value = "";
         }
     </script>
+</head>
+<body>
+    <h2>TAS.DAR Coach AI</h2>
+    <div id="responseBox" style="height:300px; overflow:auto; border:1px solid #ccc; padding:10px;"></div>
+    <input type="text" id="userInput" placeholder="Type a message..." style="width:80%;">
+    <button onclick="sendMessage()">Send</button>
 </body>
 </html>
