@@ -1,27 +1,26 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import openai
-import os
+
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
-CORS(app)
-
-openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route("/")
 def index():
-    return "TAS.DAR Coach AI Chat Endpoint Aktif."
+    return render_template("index.html")
 
-@app.route("/chat", methods=["POST"])
+@app.route("/chat")
 def chat():
+    return render_template("chat.html")
+
+@app.route("/onboarding")
+def onboarding():
+    return render_template("onboarding.html")
+
+@app.route("/api/chat", methods=["POST"])
+def chat_api():
     data = request.json
     user_input = data.get("message", "")
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}]
-        )
-        reply = response['choices'][0]['message']['content']
-        return jsonify({"reply": reply})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return {"reply": f"Balasan reflektif untuk: {user_input}"}
+
+@app.route("/health")
+def health():
+    return "TAS.DAR Coach AI Chat Endpoint Aktif."
