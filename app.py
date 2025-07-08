@@ -17,6 +17,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 def get_system_prompt():
     doc = core.find_one({"id": "tasdar_v1.0"})
     return doc["system_prompt"]["prompt"]
+    
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
