@@ -1,35 +1,33 @@
 
+from flask import Flask, request, jsonify
+from pymongo import MongoClient
+import openai
 import os
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
-from openai import OpenAI
 
 app = Flask(__name__)
-CORS(app)
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "You are TAS.DAR Coach AI, a reflective and helpful assistant.")
+# MongoDB setup
+client = MongoClient(os.getenv("MONGODB_URI"))
+db = client["tasdar_ai"]
+core = db["identity_core"]
 
-@app.route("/")
-def index():
-    return render_template("chat.html")
+# OpenAI setup
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def get_system_prompt():
+    doc = core.find_one({"id": "tasdar_v1.0"})
+    return doc["system_prompt"]["prompt"]
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
-    user_input = data.get("message", "")
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_input}
-            ]
-        )
-        reply = completion.choices[0].message.content
-        return jsonify({"reply": reply})
-    except Exception as e:
-        return jsonify({"reply": f"Error: {str(e)}"}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    user_input = request.json.get("message")
+    system_prompt = get_system_prompt()
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input}
+        ]
+    )
+    reply = response["choices"][0]["message"]["content"]
+    return jsonify({"reply": reply})
